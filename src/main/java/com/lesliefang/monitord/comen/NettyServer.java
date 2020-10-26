@@ -1,0 +1,57 @@
+package com.lesliefang.monitord.comen;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class NettyServer {
+    private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
+    private static final int PORT = 4001;
+    private static final int READ_TIMEOUT = 30;
+    private ByteBuf delimiter = Unpooled.copiedBuffer(new byte[]{0x1C, 0x0D});
+
+    public void run() {
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .childOption(ChannelOption.TCP_NODELAY, true)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(new MyIdleStateHandler(READ_TIMEOUT));
+                            ch.pipeline().addLast(new DelimiterBasedFrameDecoder(5000, delimiter));
+                            ch.pipeline().addLast(new ServerMessageHandler());
+                        }
+                    });
+            ChannelFuture f = b.bind(PORT).sync();
+
+            logger.info("server start listening at {}", PORT);
+
+            f.channel().closeFuture().addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    bossGroup.shutdownGracefully();
+                    workerGroup.shutdownGracefully();
+
+                    logger.info("server shutdown");
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        new NettyServer().run();
+    }
+}
