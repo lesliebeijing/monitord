@@ -3,6 +3,8 @@ package com.lesliefang.monitord.comen;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +63,19 @@ public class ServerMessageHandler extends ChannelInboundHandlerAdapter {
                     String maxValue = fields[7].split("^")[1];
                 }
             }
+        }
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof IdleStateEvent) {
+            IdleStateEvent e = ((IdleStateEvent) evt);
+            if (e.state() == IdleState.READER_IDLE) {
+                logger.info("read idle {} close channel", ctx.channel().remoteAddress());
+                ctx.close();
+            }
+        } else {
+            super.userEventTriggered(ctx, evt);
         }
     }
 }
