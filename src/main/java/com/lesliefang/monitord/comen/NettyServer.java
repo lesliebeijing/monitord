@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 public class NettyServer {
     private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
-    private static final int PORT = 4001;
+    private static final int PORT = 5001;
     private static final int READ_TIMEOUT = 30;
     private ByteBuf delimiter = Unpooled.copiedBuffer(new byte[]{0x1C, 0x0D});
 
@@ -30,7 +30,7 @@ public class NettyServer {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new IdleStateHandler(READ_TIMEOUT, 0, 0));
-                            ch.pipeline().addLast(new DelimiterBasedFrameDecoder(5000, delimiter));
+                            ch.pipeline().addLast(new DelimiterBasedFrameDecoder(50000, delimiter));
                             ch.pipeline().addLast(new ServerMessageHandler());
                         }
                     });
