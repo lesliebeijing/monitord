@@ -1,4 +1,4 @@
-package com.lesliefang.monitord.comen;
+package com.lesliefang.monitord.comen.hl7;
 
 public class HL7 {
     public static final String MSH = "MSH";

@@ -69,9 +69,6 @@ public class WebSocketServer {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
-//            ctx.channel().writeAndFlush(new TextWebSocketFrame("nihao meimei"));
-
-//            channelGroup.writeAndFlush(new TextWebSocketFrame("nihao meimeiddd"));
 
         }
 

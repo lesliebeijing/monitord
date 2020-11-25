@@ -1,4 +1,4 @@
-package com.lesliefang.monitord.comen;
+package com.lesliefang.monitord.comen.hl7;
 
 import com.alibaba.fastjson.JSON;
 import com.lesliefang.monitord.comen.model.*;
