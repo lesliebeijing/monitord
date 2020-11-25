@@ -165,4 +165,23 @@ public class PatientInfoPacket extends Packet {
     public String getAddress() {
         return address;
     }
+
+    @Override
+    public String toString() {
+        return "PatientInfoPacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", familyName='" + familyName + '\'' +
+                ", givenName='" + givenName + '\'' +
+                ", medicalRecord='" + medicalRecord + '\'' +
+                ", age=" + age +
+                ", height=" + height +
+                ", weight=" + weight +
+                ", sex=" + sex +
+                ", bloodType=" + bloodType +
+                ", patientType=" + patientType +
+                ", room='" + room + '\'' +
+                ", bed='" + bed + '\'' +
+                '}';
+    }
 }

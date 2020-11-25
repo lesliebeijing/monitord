@@ -26,4 +26,15 @@ public class PRPacket extends Packet {
     public byte getSrc() {
         return src;
     }
+
+    @Override
+    public String toString() {
+        return "PRPacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", PR=" + PR +
+                ", src=" + src +
+
+                '}';
+    }
 }

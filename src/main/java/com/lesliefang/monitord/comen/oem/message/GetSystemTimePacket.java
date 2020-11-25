@@ -7,4 +7,12 @@ public class GetSystemTimePacket extends Packet {
     public GetSystemTimePacket() {
         super(PacketType.PT_GETSYSTIME);
     }
+
+    @Override
+    public String toString() {
+        return "GetSystemTimePacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                '}';
+    }
 }

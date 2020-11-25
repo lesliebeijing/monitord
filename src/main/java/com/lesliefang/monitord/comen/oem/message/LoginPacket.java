@@ -44,4 +44,15 @@ public class LoginPacket extends Packet {
     public void setPmType(int pmType) {
         this.pmType = pmType;
     }
+
+    @Override
+    public String toString() {
+        return "LoginPacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", protocolType=" + protocolType +
+                ", protocolVersion=" + protocolVersion +
+                ", pmType=" + pmType +
+                '}';
+    }
 }

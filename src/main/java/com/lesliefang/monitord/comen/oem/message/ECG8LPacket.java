@@ -58,7 +58,7 @@ public class ECG8LPacket extends Packet {
 
     @Override
     public void parseData(ByteBuf data) {
-        isLeadOff = data.readUnsignedByte() == 1;
+        isLeadOff = data.readByte() == 1;
         HR = data.readShortLE();
         PVC = data.readShortLE();
         ARRType = data.readUnsignedByte();

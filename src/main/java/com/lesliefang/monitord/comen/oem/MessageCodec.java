@@ -28,7 +28,6 @@ public class MessageCodec extends MessageToMessageCodec<ByteBuf, Packet> {
         msg.readByte(); // 前导符
         msg.readByte(); // 前导符
         byte packetType = msg.readByte(); // 包类型
-        logger.debug("收到类型为 {} 的包", packetType);
         Class<? extends Packet> cls = PacketRegister.packetMap.get(packetType);
         if (cls == null) {
             logger.info("未注册这个类型的包 type: {}", packetType);
@@ -55,6 +54,8 @@ public class MessageCodec extends MessageToMessageCodec<ByteBuf, Packet> {
         packet.setCheckSum(msg.readByte()); // 校验和
         msg.readByte(); // 尾导符
         msg.readByte(); // 尾导符
+
+        logger.debug("<<=={} {}", ctx.channel().remoteAddress(), packet);
 
         out.add(packet);
     }

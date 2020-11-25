@@ -20,4 +20,13 @@ public class PmTypePacket extends Packet {
     public int getPmType() {
         return pmType;
     }
+
+    @Override
+    public String toString() {
+        return "PmTypePacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", pmType=" + pmType +
+                '}';
+    }
 }

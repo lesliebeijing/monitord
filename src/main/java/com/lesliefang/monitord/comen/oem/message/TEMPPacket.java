@@ -5,12 +5,12 @@ import io.netty.buffer.ByteBuf;
 /**
  * TEMP 体温
  */
-public class TempPacket extends Packet {
+public class TEMPPacket extends Packet {
     private boolean isLeadOff; //导联是否脱落(0正常，1脱落)
     private short T1; ////温度1(扩大10倍℃)
     private short T2; //温度2(扩大10倍℃)
 
-    public TempPacket() {
+    public TEMPPacket() {
         super(PacketType.PT_TEMP_DATA);
     }
 
@@ -31,5 +31,16 @@ public class TempPacket extends Packet {
 
     public short getT2() {
         return T2;
+    }
+
+    @Override
+    public String toString() {
+        return "TEMPPacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", isLeadOff=" + isLeadOff +
+                ", T1=" + T1 +
+                ", T2=" + T2 +
+                '}';
     }
 }

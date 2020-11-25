@@ -34,4 +34,14 @@ public class ModuleInfoPacket extends Packet {
     public boolean isDemo() {
         return isDemo;
     }
+
+    @Override
+    public String toString() {
+        return "ModuleInfoPacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", modeMap=" + modeMap +
+                ", isDemo=" + isDemo +
+                '}';
+    }
 }

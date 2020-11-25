@@ -23,4 +23,13 @@ public class LoginAckPacket extends Packet {
         buf.writeShortLE(result);
         return buf;
     }
+
+    @Override
+    public String toString() {
+        return "LoginAckPacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", result=" + result +
+                '}';
+    }
 }

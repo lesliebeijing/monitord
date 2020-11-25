@@ -2,6 +2,8 @@ package com.lesliefang.monitord.comen.oem.message;
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.Arrays;
+
 /**
  * 1个导联数据的ECG数据包(I或II或III)
  */
@@ -21,7 +23,7 @@ public class ECG1LPacket extends Packet {
     @Override
     public void parseData(ByteBuf data) {
         leadName = data.readByte();
-        isLeadOff = data.readUnsignedByte() == 1;
+        isLeadOff = data.readByte() == 1;
         HR = data.readShortLE();
         PVC = data.readShortLE();
         ARRType = data.readUnsignedByte();
@@ -55,5 +57,20 @@ public class ECG1LPacket extends Packet {
 
     public byte[] getWaveData() {
         return waveData;
+    }
+
+    @Override
+    public String toString() {
+        return "ECG1LPacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", leadName=" + leadName +
+                ", isLeadOff=" + isLeadOff +
+                ", HR=" + HR +
+                ", PVC=" + PVC +
+                ", ARRType=" + ARRType +
+                ", ST=" + ST +
+                ", waveData=" + Arrays.toString(waveData) +
+                '}';
     }
 }

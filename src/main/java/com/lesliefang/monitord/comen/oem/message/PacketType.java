@@ -12,7 +12,7 @@ public interface PacketType {
     byte PT_LOGIN = 9; // 上电注册包
     byte PT_LOGIN_ACK = 10; // 上电注册应答包
     byte PT_LOGOUT = 11; // 注销包
-    byte PT_INIT_FINISHUT = 12; // 注册完成包
+    byte PT_INIT_FINISH = 12; // 注册完成包
     byte PT_ECG1L_DATA = 13; // 1个导联数据的ECG数据包(波形只有I/II/V中的其中1道)
     byte PT_ECG3L_DATA = 14; // 3个导联数据的ECG数据包(波形I+II+V三道)
     byte PT_ECG8L_DATA = 15; // 8导联数据的ECG数据包(波形I+II+V1~6V)
