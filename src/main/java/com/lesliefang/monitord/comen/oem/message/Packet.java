@@ -2,7 +2,8 @@ package com.lesliefang.monitord.comen.oem.message;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.springframework.lang.NonNull;
+
+import java.io.UnsupportedEncodingException;
 
 public class Packet {
     public static final byte PREFIX = (byte) 0xBB; // 前导符
@@ -38,7 +39,7 @@ public class Packet {
      *
      * @param data 返回数据块
      */
-    public void parseData(@NonNull ByteBuf data) {
+    public void parseData(ByteBuf data) {
 
     }
 
@@ -86,6 +87,20 @@ public class Packet {
         buf.writeByte(SUFFIX);
 
         return buf;
+    }
+
+    protected byte[] handlerStringField(String str, int fieldLength) {
+        byte[] dest = new byte[fieldLength];
+        if (str != null) {
+            try {
+                byte[] src = str.getBytes("GBK");
+                int len = src.length > fieldLength ? fieldLength : src.length;
+                System.arraycopy(src, 0, dest, 0, len);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
+        return dest;
     }
 
     public byte getType() {

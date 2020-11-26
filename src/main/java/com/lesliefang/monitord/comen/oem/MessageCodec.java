@@ -2,6 +2,7 @@ package com.lesliefang.monitord.comen.oem;
 
 import com.lesliefang.monitord.comen.oem.message.Packet;
 import com.lesliefang.monitord.comen.oem.message.PacketRegister;
+import com.lesliefang.monitord.comen.oem.message.PacketType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;

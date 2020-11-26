@@ -80,4 +80,23 @@ public class NIBPPacket extends Packet {
     public byte getErrCode() {
         return errCode;
     }
+
+    @Override
+    public String toString() {
+        return "NIBPPacket{" +
+                "type=" + type +
+                ", bedNum=" + bedNum +
+                ", year=" + year +
+                ", month=" + month +
+                ", day=" + day +
+                ", hour=" + hour +
+                ", minute=" + minute +
+                ", second=" + second +
+                ", sys=" + sys +
+                ", mean=" + mean +
+                ", dia=" + dia +
+                ", isFinish=" + isFinish +
+                ", errCode=" + errCode +
+                '}';
+    }
 }
