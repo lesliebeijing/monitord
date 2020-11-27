@@ -15,7 +15,7 @@ public class DeviceSnPacket extends Packet {
 
     @Override
     public void parseData(ByteBuf data) {
-        sn = data.readCharSequence(24, CharsetUtil.UTF_8).toString();
+        sn = data.readCharSequence(24, CharsetUtil.UTF_8).toString().trim();
     }
 
     public String getSn() {

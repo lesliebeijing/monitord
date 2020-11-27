@@ -2,7 +2,6 @@ package com.lesliefang.monitord.comen.oem;
 
 import com.lesliefang.monitord.comen.oem.message.Packet;
 import com.lesliefang.monitord.comen.oem.message.PacketRegister;
-import com.lesliefang.monitord.comen.oem.message.PacketType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -21,6 +20,7 @@ public class MessageCodec extends MessageToMessageCodec<ByteBuf, Packet> {
     @Override
     protected void encode(ChannelHandlerContext ctx, Packet msg, List<Object> out) throws Exception {
         out.add(msg.buildPacket());
+        logger.debug("==>>{} {}", ctx.channel().remoteAddress(), msg);
     }
 
     @Override

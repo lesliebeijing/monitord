@@ -6,13 +6,17 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     private static final Logger logger = LoggerFactory.getLogger(CmsServer.class);
+    private static ConcurrentHashMap<String, Channel> allChannels = new ConcurrentHashMap<>();
+    private AttributeKey<String> snKey = AttributeKey.valueOf("sn");
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -24,12 +28,16 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     protected void channelRead0(ChannelHandlerContext ctx, Packet msg) throws Exception {
         switch (msg.getType()) {
             case PacketType.PT_LOGIN:
-                LoginAckPacket loginAckPacket = new LoginAckPacket(0);
-                ctx.channel().writeAndFlush(loginAckPacket);
-                logger.debug("==>>{} {}", ctx.channel().remoteAddress(), loginAckPacket);
+                ctx.channel().writeAndFlush(new LoginAckPacket(0));
                 break;
             case PacketType.PT_GETSYSTIME:
-                handlerGetSystemTimePacket(ctx.channel());
+                handleGetSystemTimePacket(ctx.channel());
+                break;
+            case PacketType.PT_NET_CONTROL:
+                ctx.channel().writeAndFlush(new NetControlAckPacket());
+                break;
+            case PacketType.PT_DEVICE_SN:
+                handleDeviceSnPacket(msg, ctx.channel());
                 break;
             case PacketType.PT_HEARTBEAT:
                 break;
@@ -52,14 +60,41 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         logger.info("channelInactive {}", ctx.channel().remoteAddress());
+        String sn = ctx.channel().attr(snKey).get();
+        if (sn != null) {
+            allChannels.remove(sn);
+            ctx.channel().attr(snKey).set(null);
+        }
         super.channelInactive(ctx);
     }
 
-    private void handlerGetSystemTimePacket(Channel channel) {
+    private void handleGetSystemTimePacket(Channel channel) {
         Calendar calendar = Calendar.getInstance();
         channel.writeAndFlush(new SystemTimePacket((short) calendar.get(Calendar.YEAR),
                 (byte) calendar.get(Calendar.MONTH), (byte) calendar.get(Calendar.DAY_OF_MONTH),
                 (byte) calendar.get(Calendar.HOUR), (byte) calendar.get(Calendar.MINUTE),
                 (byte) calendar.get(Calendar.SECOND)));
+    }
+
+    private void handleDeviceSnPacket(Packet packet, Channel channel) {
+        DeviceSnPacket deviceSnPacket = ((DeviceSnPacket) packet);
+        if (channel.attr(snKey) == null) {
+            channel.attr(snKey).set(deviceSnPacket.getSn());
+        }
+        allChannels.put(deviceSnPacket.getSn(), channel);
+    }
+
+    /**
+     * 转发外部上位机请求到设备
+     *
+     * @param deviceSn 设备sn
+     */
+    public static void forwardToDevice(String deviceSn, Packet packet) {
+        Channel channel = allChannels.get(deviceSn);
+        if (channel == null) {
+            logger.error("forwardToDevice->{} no channel", deviceSn);
+            return;
+        }
+        channel.writeAndFlush(packet);
     }
 }
