@@ -1,4 +1,4 @@
-package com.lesliefang.monitord.comen.model;
+package com.lesliefang.monitord.comen.hl7.model;
 
 public enum CodeTable {
     HR("147842", "HR", "bpm", "心率 次/分"),

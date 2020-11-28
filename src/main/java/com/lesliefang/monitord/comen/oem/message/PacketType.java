@@ -62,4 +62,7 @@ public interface PacketType {
     byte PT_REMOTE_ECG8L_WAVE = 82; // 8个导联数据的心电数据包
     byte PT_REMOTE_SPO2_DATA = 83; // 遥测脉率包
     byte PT_REMOTE_STATE_DATA = 84; // 遥测状态数据包
+
+
+    byte CUSTOM_DISCONNECTED = 100; // 自定义：监护仪掉线
 }

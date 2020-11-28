@@ -72,31 +72,31 @@ public class PatientInfoPacket extends Packet {
 
     @Override
     public void parseData(ByteBuf data) {
-        familyName = data.readCharSequence(24, Charset.forName("GBK")).toString();
-        givenName = data.readCharSequence(24, Charset.forName("GBK")).toString();
-        medicalRecord = data.readCharSequence(24, CharsetUtil.UTF_8).toString();
+        familyName = data.readCharSequence(24, Charset.forName("GBK")).toString().trim();
+        givenName = data.readCharSequence(24, Charset.forName("GBK")).toString().trim();
+        medicalRecord = data.readCharSequence(24, CharsetUtil.UTF_8).toString().trim();
         age = data.readByte();
         height = data.readUnsignedByte();
         weight = data.readUnsignedShortLE();
         sex = data.readByte();
         bloodType = data.readByte();
         patientType = data.readByte();
-        birthday = data.readCharSequence(8, CharsetUtil.UTF_8).toString();
-        admiDate = data.readCharSequence(8, CharsetUtil.UTF_8).toString();
-        doctor = data.readCharSequence(24, Charset.forName("GBK")).toString();
-        order = data.readCharSequence(250, CharsetUtil.UTF_8).toString();
-        comment = data.readCharSequence(250, Charset.forName("GBK")).toString();
+        birthday = data.readCharSequence(8, CharsetUtil.UTF_8).toString().trim();
+        admiDate = data.readCharSequence(8, CharsetUtil.UTF_8).toString().trim();
+        doctor = data.readCharSequence(24, Charset.forName("GBK")).toString().trim();
+        order = data.readCharSequence(250, CharsetUtil.UTF_8).toString().trim();
+        comment = data.readCharSequence(250, Charset.forName("GBK")).toString().trim();
         gravd = data.readByte();
         embryo = data.readByte();
         para = data.readByte();
         gesta = data.readShortLE();
-        department = data.readCharSequence(24, CharsetUtil.UTF_8).toString();
-        room = data.readCharSequence(6, CharsetUtil.UTF_8).toString();
-        bed = data.readCharSequence(10, CharsetUtil.UTF_8).toString();
-        telephone = data.readCharSequence(24, CharsetUtil.UTF_8).toString();
-        postCode = data.readCharSequence(8, CharsetUtil.UTF_8).toString();
-        email = data.readCharSequence(48, CharsetUtil.UTF_8).toString();
-        address = data.readCharSequence(200, CharsetUtil.UTF_8).toString();
+        department = data.readCharSequence(24, CharsetUtil.UTF_8).toString().trim();
+        room = data.readCharSequence(6, CharsetUtil.UTF_8).toString().trim();
+        bed = data.readCharSequence(10, CharsetUtil.UTF_8).toString().trim();
+        telephone = data.readCharSequence(24, CharsetUtil.UTF_8).toString().trim();
+        postCode = data.readCharSequence(8, CharsetUtil.UTF_8).toString().trim();
+        email = data.readCharSequence(48, CharsetUtil.UTF_8).toString().trim();
+        address = data.readCharSequence(200, CharsetUtil.UTF_8).toString().trim();
     }
 
     public String getFamilyName() {

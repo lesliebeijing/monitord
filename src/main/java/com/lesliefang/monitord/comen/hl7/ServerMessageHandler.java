@@ -1,7 +1,7 @@
 package com.lesliefang.monitord.comen.hl7;
 
 import com.alibaba.fastjson.JSON;
-import com.lesliefang.monitord.comen.model.*;
+import com.lesliefang.monitord.comen.hl7.model.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

@@ -1,4 +1,4 @@
-package com.lesliefang.monitord.comen.model;
+package com.lesliefang.monitord.comen.hl7.model;
 
 import java.util.HashMap;
 import java.util.Map;

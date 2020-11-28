@@ -1,9 +1,12 @@
 package com.lesliefang.monitord.comen.oem;
 
+import com.alibaba.fastjson.JSON;
 import com.lesliefang.monitord.comen.oem.message.*;
+import com.lesliefang.monitord.websocket.WebSocketServer;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
@@ -17,6 +20,7 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     private static final Logger logger = LoggerFactory.getLogger(CmsServer.class);
     private static ConcurrentHashMap<String, Channel> allChannels = new ConcurrentHashMap<>();
     private AttributeKey<String> snKey = AttributeKey.valueOf("sn");
+    private byte netBedNum;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -35,11 +39,16 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
                 break;
             case PacketType.PT_NET_CONTROL:
                 ctx.channel().writeAndFlush(new NetControlAckPacket());
+                publish(msg);
                 break;
             case PacketType.PT_DEVICE_SN:
+                netBedNum = msg.getBedNum();
                 handleDeviceSnPacket(msg, ctx.channel());
                 break;
             case PacketType.PT_HEARTBEAT:
+                break;
+            default:
+                publish(msg);
                 break;
         }
     }
@@ -64,6 +73,9 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
         if (sn != null) {
             allChannels.remove(sn);
             ctx.channel().attr(snKey).set(null);
+            Packet packet = new Packet(PacketType.CUSTOM_DISCONNECTED);
+            packet.setBedNum(netBedNum);
+            publish(packet);
         }
         super.channelInactive(ctx);
     }
@@ -96,5 +108,9 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
             return;
         }
         channel.writeAndFlush(packet);
+    }
+
+    private void publish(Packet packet) {
+        WebSocketServer.channelGroup.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(packet)));
     }
 }

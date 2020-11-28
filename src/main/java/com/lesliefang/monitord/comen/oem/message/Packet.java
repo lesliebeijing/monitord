@@ -1,5 +1,6 @@
 package com.lesliefang.monitord.comen.oem.message;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -46,6 +47,7 @@ public class Packet {
     /**
      * 校验和
      */
+    @JSONField(serialize = false)
     byte checkSum;
 
     public ByteBuf buildPacket() {

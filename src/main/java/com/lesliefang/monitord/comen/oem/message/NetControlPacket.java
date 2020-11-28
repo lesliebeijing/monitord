@@ -26,7 +26,7 @@ public class NetControlPacket extends Packet {
 
     @Override
     public void parseData(ByteBuf data) {
-        subType = data.readByte();
+        subType = data.readShortLE();
         data.readBytes(this.data);
     }
 
