@@ -27,3 +27,17 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+task buildLib(type: Jar) {
+    archiveFileName = 'libcomen.jar'
+    manifest {
+        attributes 'Class-Path': 'fastjson:1.2.73.jar netty-all:4.1.50.Final'
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    exclude '*.*'
+    exclude 'META-INF/*.json'
+    with jar
+}
+
