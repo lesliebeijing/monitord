@@ -35,6 +35,17 @@ public class ECG1LPacket extends Packet {
         return leadName;
     }
 
+    public String getEcg1LeadName() {
+        if (leadName == 1) {
+            return "I";
+        } else if (leadName == 2) {
+            return "II";
+        } else if (leadName == 3) {
+            return "III";
+        }
+        return null;
+    }
+
     public boolean isLeadOff() {
         return isLeadOff;
     }

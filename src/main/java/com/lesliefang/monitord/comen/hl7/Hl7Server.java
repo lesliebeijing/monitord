@@ -12,8 +12,8 @@ import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NettyServer {
-    private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
+public class Hl7Server {
+    private static final Logger logger = LoggerFactory.getLogger(Hl7Server.class);
     private static final int PORT = 5001;
     private static final int READ_TIMEOUT = 30;
     private ByteBuf delimiter = Unpooled.copiedBuffer(new byte[]{0x1C, 0x0D});
@@ -53,6 +53,6 @@ public class NettyServer {
     }
 
     public static void main(String[] args) {
-        new NettyServer().run();
+        new Hl7Server().run();
     }
 }

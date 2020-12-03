@@ -1,5 +1,6 @@
 package com.lesliefang.monitord.websocket;
 
+import com.lesliefang.monitord.comen.oem.CmsServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
@@ -60,11 +61,17 @@ public class WebSocketServer {
         workerGroup.shutdownGracefully();
     }
 
+    public static void publishToAll(String message) {
+        channelGroup.writeAndFlush(new TextWebSocketFrame(message));
+    }
+
     class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             channelGroup.add(ctx.channel());
+            // 上位机上线时发送所有监护仪信息
+            CmsServerHandler.publishAllMonitorInfo();
         }
 
         @Override

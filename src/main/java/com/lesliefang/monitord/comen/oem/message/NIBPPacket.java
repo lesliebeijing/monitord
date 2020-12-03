@@ -2,6 +2,8 @@ package com.lesliefang.monitord.comen.oem.message;
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.Date;
+
 /**
  * NIBP
  */
@@ -79,6 +81,10 @@ public class NIBPPacket extends Packet {
 
     public byte getErrCode() {
         return errCode;
+    }
+
+    public String getTime() {
+        return new Date(year, month, day, hour, minute, second).toString();
     }
 
     @Override

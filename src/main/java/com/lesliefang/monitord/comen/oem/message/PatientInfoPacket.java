@@ -115,6 +115,13 @@ public class PatientInfoPacket extends Packet {
         this.givenName = givenName;
     }
 
+    public String getName() {
+        if (familyName != null && givenName != null) {
+            return getFamilyName() + getGivenName();
+        }
+        return null;
+    }
+
     public String getMedicalRecord() {
         return medicalRecord;
     }

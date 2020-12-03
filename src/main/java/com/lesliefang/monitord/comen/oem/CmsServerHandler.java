@@ -2,11 +2,14 @@ package com.lesliefang.monitord.comen.oem;
 
 import com.alibaba.fastjson.JSON;
 import com.lesliefang.monitord.comen.oem.message.*;
+import com.lesliefang.monitord.comen.oem.model.DeviceContext;
+import com.lesliefang.monitord.comen.oem.model.DeviceEvent;
+import com.lesliefang.monitord.comen.oem.model.EventType;
+import com.lesliefang.monitord.comen.oem.model.VitalSign;
 import com.lesliefang.monitord.websocket.WebSocketServer;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
@@ -14,13 +17,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     private static final Logger logger = LoggerFactory.getLogger(CmsServer.class);
     private static ConcurrentHashMap<String, Channel> allChannels = new ConcurrentHashMap<>();
+    // NetBedNum -> DeviceContext map, 设置时要保证网络床号的唯一性
+    private static ConcurrentHashMap<Integer, DeviceContext> deviceContexts = new ConcurrentHashMap<>();
     private AttributeKey<String> snKey = AttributeKey.valueOf("sn");
-    private byte netBedNum;
+    private AttributeKey<Integer> netBedNumKey = AttributeKey.valueOf("netBedNum");
+
+    private VitalSign vitalSign = new VitalSign();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -29,8 +37,16 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Packet msg) throws Exception {
-        switch (msg.getType()) {
+    protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
+        DeviceContext deviceContext = deviceContexts.get((int) packet.getBedNum());
+        if (deviceContext == null) {
+            ctx.channel().attr(netBedNumKey).set((int) packet.getBedNum());
+            deviceContext = new DeviceContext();
+            deviceContext.setNetBedNum((int) packet.getBedNum());
+            deviceContexts.put((int) packet.getBedNum(), deviceContext);
+        }
+
+        switch (packet.getType()) {
             case PacketType.PT_LOGIN:
                 ctx.channel().writeAndFlush(new LoginAckPacket(0));
                 break;
@@ -39,16 +55,73 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
                 break;
             case PacketType.PT_NET_CONTROL:
                 ctx.channel().writeAndFlush(new NetControlAckPacket());
-                publish(msg);
                 break;
             case PacketType.PT_DEVICE_SN:
-                netBedNum = msg.getBedNum();
-                handleDeviceSnPacket(msg, ctx.channel());
+                handleDeviceSnPacket((DeviceSnPacket) packet, ctx.channel(), deviceContext);
                 break;
             case PacketType.PT_HEARTBEAT:
                 break;
-            default:
-                publish(msg);
+            case PacketType.PT_PATIENT_INFO:
+                handlePatientInfoPacket((PatientInfoPacket) packet, deviceContext);
+                // 只要收到 PATIENT_INFO 包就认为已经接收了病人
+                deviceContext.setHasReceivePatient(true);
+                publishDeviceContext(deviceContext);
+                break;
+            case PacketType.PT_RECIEVE_PATIENT:
+                // 监护仪接收病人
+                deviceContext.setHasReceivePatient(true);
+                break;
+            case PacketType.PT_RELEASE_PATIENT:
+                // 监护仪解除病人
+                deviceContext.setHasReceivePatient(false);
+                publishDeviceContext(deviceContext);
+                break;
+            case PacketType.PT_HR_LIMIT_DATA:
+                handleHRLimitPacket((HRLimitPacket) packet, deviceContext);
+                publishDeviceContext(deviceContext);
+                break;
+            case PacketType.PT_PR_LIMIT_DATA:
+                handlePRLimitPacket((PRLimitPacket) packet, deviceContext);
+                publishDeviceContext(deviceContext);
+                break;
+            case PacketType.PT_RESP_LIMIT_DATA:
+                handleRESPLimitPacket((RESPLimitPacket) packet, deviceContext);
+                publishDeviceContext(deviceContext);
+                break;
+            case PacketType.PT_SPO2_LIMIT_DATA:
+                handleSPO2LimitPacket((SPO2LimitPacket) packet, deviceContext);
+                publishDeviceContext(deviceContext);
+                break;
+            case PacketType.PT_NIBP_LIMIT_DATA:
+                handleNIBPLimitPacket((NIBPLimitPacket) packet, deviceContext);
+                publishDeviceContext(deviceContext);
+                break;
+            case PacketType.PT_TEMP_LIMIT_DATA:
+                handleTEMPLimitPacket((TEMPLimitPacket) packet, deviceContext);
+                publish(new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext));
+                publishDeviceContext(deviceContext);
+                break;
+            case PacketType.PT_ECG1L_DATA:
+                handleECG1Packet((ECG1LPacket) packet);
+                break;
+            case PacketType.PT_SPO2_DIG_DATA:
+                handleSPO2DiaPacket((SPO2DigPacket) packet);
+                break;
+            case PacketType.PT_PR_DATA:
+                handlePRPacket((PRPacket) packet);
+                break;
+            case PacketType.PT_RESP_DATA:
+                handleRESPPacket((RESPPacket) packet);
+                break;
+            case PacketType.PT_NIBP_DATA:
+                handleNIBPPacket((NIBPPacket) packet, deviceContext);
+                break;
+            case PacketType.PT_TEMP_DATA:
+                handleTEMPPacket((TEMPPacket) packet);
+                /*
+                 * 接收到体温数据后发送生命体征数据给上位机，体温数据包是最后一个（依赖包的顺序）
+                 */
+                publish(new DeviceEvent(EventType.EVENT_MONITOR_DATA, vitalSign));
                 break;
         }
     }
@@ -70,12 +143,15 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         logger.info("channelInactive {}", ctx.channel().remoteAddress());
         String sn = ctx.channel().attr(snKey).get();
+        Integer netBedNum = ctx.channel().attr(netBedNumKey).get();
         if (sn != null) {
             allChannels.remove(sn);
             ctx.channel().attr(snKey).set(null);
-            Packet packet = new Packet(PacketType.CUSTOM_DISCONNECTED);
-            packet.setBedNum(netBedNum);
-            publish(packet);
+        }
+        if (netBedNum != null) {
+            deviceContexts.remove(netBedNum);
+            ctx.channel().attr(netBedNumKey).set(null);
+            publish(new DeviceEvent(EventType.EVENT_DISCONNECTED));
         }
         super.channelInactive(ctx);
     }
@@ -88,12 +164,112 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
                 (byte) calendar.get(Calendar.SECOND)));
     }
 
-    private void handleDeviceSnPacket(Packet packet, Channel channel) {
-        DeviceSnPacket deviceSnPacket = ((DeviceSnPacket) packet);
-        if (channel.attr(snKey) == null) {
-            channel.attr(snKey).set(deviceSnPacket.getSn());
+    private void handleDeviceSnPacket(DeviceSnPacket packet, Channel channel, DeviceContext deviceContext) {
+        channel.attr(snKey).set(packet.getSn());
+        allChannels.put(packet.getSn(), channel);
+        deviceContext.setDeviceSn(packet.getSn());
+    }
+
+    private void handlePatientInfoPacket(PatientInfoPacket packet, DeviceContext deviceContext) {
+        deviceContext.setPatientName(packet.getName());
+    }
+
+    private void handleHRLimitPacket(HRLimitPacket packet, DeviceContext deviceContext) {
+        deviceContext.setHRAlarmOn(packet.isAlarmOn());
+        deviceContext.setHRAlarmLevel(packet.getAlarmLevel());
+        deviceContext.setHRHighLimit(packet.getHigh());
+        deviceContext.setHRLowLimit(packet.getLow());
+    }
+
+    private void handlePRLimitPacket(PRLimitPacket packet, DeviceContext deviceContext) {
+        deviceContext.setPRAlarmOn(packet.isAlarmOn());
+        deviceContext.setPRAlarmLevel(packet.getAlarmLevel());
+        deviceContext.setPRHighLimit(packet.getHigh());
+        deviceContext.setPRLowLimit(packet.getLow());
+    }
+
+    private void handleRESPLimitPacket(RESPLimitPacket packet, DeviceContext deviceContext) {
+        deviceContext.setRESPAlarmOn(packet.isAlarmOn());
+        deviceContext.setRESPAlarmLevel(packet.getAlarmLevel());
+        deviceContext.setRESPHighLimit(packet.getHigh());
+        deviceContext.setRESPLowLimit(packet.getLow());
+    }
+
+    private void handleSPO2LimitPacket(SPO2LimitPacket packet, DeviceContext deviceContext) {
+        deviceContext.setSPO2AlarmOn(packet.isAlarmOn());
+        deviceContext.setSPO2AlarmLevel(packet.getAlarmLevel());
+        deviceContext.setSPO2HighLimit(packet.getHigh());
+        deviceContext.setSPO2LowLimit(packet.getLow());
+    }
+
+    private void handleNIBPLimitPacket(NIBPLimitPacket packet, DeviceContext deviceContext) {
+        deviceContext.setNIBPAlarmOn(packet.isAlarmOn());
+        deviceContext.setNIBPAlarmLevel(packet.getAlarmLevel());
+        deviceContext.setNIBPSysHighLimit(packet.getSysHigh());
+        deviceContext.setNIBPSysLowLimit(packet.getSysLow());
+        deviceContext.setNIBPDiaHighLimit(packet.getDiaHigh());
+        deviceContext.setNIBPSysLowLimit(packet.getDiaLow());
+        deviceContext.setNIBPMeanHighLimit(packet.getDiaHigh());
+        deviceContext.setNIBPMeanLowLimit(packet.getMeanLow());
+    }
+
+    private void handleTEMPLimitPacket(TEMPLimitPacket packet, DeviceContext deviceContext) {
+        deviceContext.setTEMPAlarmOn(packet.isAlarmOn());
+        deviceContext.setTEMPAlarmLevel(packet.getAlarmLevel());
+        deviceContext.setT1HighLimit(packet.getT1High());
+        deviceContext.setT1LowLimit(packet.getT1Low());
+        deviceContext.setT2HighLimit(packet.getT2High());
+        deviceContext.setT2LowLimit(packet.getT2Low());
+    }
+
+    private void handleECG1Packet(ECG1LPacket packet) {
+        vitalSign.setEcg1LeadOff(packet.isLeadOff());
+        vitalSign.setEcg1LeadName(packet.getEcg1LeadName());
+        vitalSign.setEcg1PVC(packet.getPVC());
+        vitalSign.setHR(packet.getHR());
+        vitalSign.setEcg1WaveData(packet.getWaveData());
+    }
+
+    private void handleSPO2DiaPacket(SPO2DigPacket packet) {
+        vitalSign.setSPO2LeadOff(packet.isLeadOff());
+        vitalSign.setSPO2(packet.getSPO2());
+        vitalSign.setSpo2WaveData(packet.getWaveData());
+    }
+
+    private void handlePRPacket(PRPacket packet) {
+        vitalSign.setPR(packet.getPR());
+        vitalSign.setPRSource(packet.getSrc());
+    }
+
+    private void handleRESPPacket(RESPPacket packet) {
+        vitalSign.setRRLeadOff(packet.isLeadOff());
+        vitalSign.setRR(packet.getRR());
+        vitalSign.setRespWaveData(packet.getWaveData());
+    }
+
+    private void handleTEMPPacket(TEMPPacket packet) {
+        vitalSign.setTEMPLeadOff(packet.isLeadOff());
+        vitalSign.setT1(packet.getT1());
+        vitalSign.setT2(packet.getT2());
+    }
+
+    private void handleNIBPPacket(NIBPPacket packet, DeviceContext deviceContext) {
+        vitalSign.setNIBP_TIME(packet.getTime());
+        vitalSign.setNIBP_SYS(packet.getSys());
+        vitalSign.setNIBP_DIA(packet.getDia());
+        vitalSign.setNIBP_MEAN(packet.getMean());
+        vitalSign.setNIBPFinish(packet.isFinish());
+    }
+
+    /**
+     * 上位机（大屏）首次连接中央站时发送所有的监护仪信息
+     */
+    public static void publishAllMonitorInfo() {
+        Collection<DeviceContext> deviceContextList = deviceContexts.values();
+        for (DeviceContext deviceContext : deviceContextList) {
+            DeviceEvent deviceEvent = new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext);
+            WebSocketServer.publishToAll(JSON.toJSONString(deviceEvent));
         }
-        allChannels.put(deviceSnPacket.getSn(), channel);
     }
 
     /**
@@ -110,7 +286,11 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
         channel.writeAndFlush(packet);
     }
 
-    private void publish(Packet packet) {
-        WebSocketServer.channelGroup.writeAndFlush(new TextWebSocketFrame(JSON.toJSONString(packet)));
+    private void publishDeviceContext(DeviceContext deviceContext) {
+        publish(new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext));
+    }
+
+    private void publish(DeviceEvent deviceEvent) {
+        WebSocketServer.publishToAll(JSON.toJSONString(deviceEvent));
     }
 }

@@ -11,6 +11,7 @@ public class PacketRegister {
         packetMap.put(PacketType.PT_LOGOUT, LogoutPacket.class);
         packetMap.put(PacketType.PT_INIT_FINISH, InitFinishPacket.class);
         packetMap.put(PacketType.PT_GETSYSTIME, GetSystemTimePacket.class);
+        packetMap.put(PacketType.PT_RECIEVE_PATIENT, ReceivePatientPacket.class);
         packetMap.put(PacketType.PT_RELEASE_PATIENT, ReleasePatientPacket.class);
         packetMap.put(PacketType.PT_MODULE_INFO, ModuleInfoPacket.class);
         packetMap.put(PacketType.PT_PM_TYPE, PmTypePacket.class);

@@ -26,7 +26,7 @@ public class Packet {
     /**
      * 网络床号
      */
-    byte bedNum;
+    byte bedNum = -1;
 
     /**
      * 数据块,默认返回NULL，子类可复写
