@@ -2,6 +2,7 @@ package com.lesliefang.monitord.comen.oem.message;
 
 import io.netty.buffer.ByteBuf;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -84,7 +85,8 @@ public class NIBPPacket extends Packet {
     }
 
     public String getTime() {
-        return new Date(year, month, day, hour, minute, second).toString();
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+        return sdf.format(new Date(year, month, day, hour, minute, second));
     }
 
     @Override

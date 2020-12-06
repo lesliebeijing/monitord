@@ -16,6 +16,8 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 public class WebSocketServer {
     private final static Logger logger = LoggerFactory.getLogger(WebSocketServer.class);
     private final int port = 5520;
@@ -62,6 +64,7 @@ public class WebSocketServer {
     }
 
     public static void publishToAll(String message) {
+        logger.debug("websocket publishToAll client count: {}", channelGroup.size());
         channelGroup.writeAndFlush(new TextWebSocketFrame(message));
     }
 
@@ -70,8 +73,13 @@ public class WebSocketServer {
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             channelGroup.add(ctx.channel());
-            // 上位机上线时发送所有监护仪信息
-            CmsServerHandler.publishAllMonitorInfo();
+            ctx.channel().eventLoop().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    // 上位机上线时发送所有监护仪信息
+                    CmsServerHandler.publishAllMonitorInfo();
+                }
+            }, 5, TimeUnit.SECONDS);
         }
 
         @Override

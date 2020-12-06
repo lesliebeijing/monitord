@@ -27,9 +27,9 @@ public class VitalSign {
     private boolean isTEMPLeadOff;
 
     private String NIBP_TIME; // 血压测量时间
-    private int NIBP_SYS;
-    private int NIBP_DIA;
-    private int NIBP_MEAN;
+    private int NIBP_SYS = -100;
+    private int NIBP_DIA = -100;
+    private int NIBP_MEAN = -100;
     private boolean isNIBPFinish; // 是否测量结束
 
     public int getHR() {

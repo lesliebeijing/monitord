@@ -54,7 +54,7 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
                 handleGetSystemTimePacket(ctx.channel());
                 break;
             case PacketType.PT_NET_CONTROL:
-                ctx.channel().writeAndFlush(new NetControlAckPacket());
+//                ctx.channel().writeAndFlush(new NetControlAckPacket());
                 break;
             case PacketType.PT_DEVICE_SN:
                 handleDeviceSnPacket((DeviceSnPacket) packet, ctx.channel(), deviceContext);
@@ -98,7 +98,6 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
                 break;
             case PacketType.PT_TEMP_LIMIT_DATA:
                 handleTEMPLimitPacket((TEMPLimitPacket) packet, deviceContext);
-                publish(new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext));
                 publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_ECG1L_DATA:
@@ -121,7 +120,7 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
                 /*
                  * 接收到体温数据后发送生命体征数据给上位机，体温数据包是最后一个（依赖包的顺序）
                  */
-                publish(new DeviceEvent(EventType.EVENT_MONITOR_DATA, vitalSign));
+                publish(new DeviceEvent(EventType.EVENT_MONITOR_DATA, packet.getBedNum(), vitalSign));
                 break;
         }
     }
@@ -151,7 +150,7 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
         if (netBedNum != null) {
             deviceContexts.remove(netBedNum);
             ctx.channel().attr(netBedNumKey).set(null);
-            publish(new DeviceEvent(EventType.EVENT_DISCONNECTED));
+            publish(new DeviceEvent(EventType.EVENT_DISCONNECTED, netBedNum));
         }
         super.channelInactive(ctx);
     }
@@ -267,7 +266,8 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     public static void publishAllMonitorInfo() {
         Collection<DeviceContext> deviceContextList = deviceContexts.values();
         for (DeviceContext deviceContext : deviceContextList) {
-            DeviceEvent deviceEvent = new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext);
+            DeviceEvent deviceEvent = new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext.getNetBedNum(), deviceContext);
+            logger.info("publishAllMonitorInfo {}", deviceEvent);
             WebSocketServer.publishToAll(JSON.toJSONString(deviceEvent));
         }
     }
@@ -287,7 +287,7 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     }
 
     private void publishDeviceContext(DeviceContext deviceContext) {
-        publish(new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext));
+        publish(new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext.getNetBedNum(), deviceContext));
     }
 
     private void publish(DeviceEvent deviceEvent) {

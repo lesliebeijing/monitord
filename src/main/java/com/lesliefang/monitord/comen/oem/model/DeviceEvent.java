@@ -4,7 +4,7 @@ public class DeviceEvent {
 
     private int eventType;
 
-    private int netBedNum; // 网络床号，可作为设备唯一标识
+    private Integer netBedNum; // 网络床号，可作为设备唯一标识
 
     private String deviceSn;
 
@@ -14,13 +14,14 @@ public class DeviceEvent {
 
     }
 
-    public DeviceEvent(int eventType) {
-        this(eventType, null);
+    public DeviceEvent(int eventType, int netBedNum) {
+        this(eventType, netBedNum, null);
     }
 
-    public DeviceEvent(int eventType, Object data) {
+    public DeviceEvent(int eventType, int netBedNum, Object data) {
         this.eventType = eventType;
         this.data = data;
+        this.netBedNum = netBedNum;
     }
 
     public int getEventType() {
@@ -53,5 +54,15 @@ public class DeviceEvent {
 
     public void setData(Object data) {
         this.data = data;
+    }
+
+    @Override
+    public String toString() {
+        return "DeviceEvent{" +
+                "eventType=" + eventType +
+                ", netBedNum=" + netBedNum +
+                ", deviceSn='" + deviceSn + '\'' +
+                ", data=" + data +
+                '}';
     }
 }

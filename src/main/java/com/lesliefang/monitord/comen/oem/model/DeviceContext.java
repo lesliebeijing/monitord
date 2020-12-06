@@ -29,55 +29,55 @@ public class DeviceContext {
      * HR 心率报警设置
      */
     private boolean isHRAlarmOn = true; // HR报警是否开启
-    private int HRAlarmLevel = -1; // HR报警级别
-    private int HRHighLimit = -1; // HR报警上限
-    private int HRLowLimit = -1; // HR报警下限
+    private int HRAlarmLevel = -100; // HR报警级别
+    private int HRHighLimit = -100; // HR报警上限
+    private int HRLowLimit = -100; // HR报警下限
 
     /**
      * PR 脉搏报警设置
      */
     private boolean isPRAlarmOn = true;
-    private int PRAlarmLevel = -1;
-    private int PRHighLimit = -1;
-    private int PRLowLimit = -1;
+    private int PRAlarmLevel = -100;
+    private int PRHighLimit = -100;
+    private int PRLowLimit = -100;
 
     /**
      * NIBP 血压报警设置
      */
     private boolean isNIBPAlarmOn = true;
-    private int NIBPAlarmLevel = -1;
-    private int NIBPSysHighLimit = -1;
-    private int NIBPSysLowLimit = -1;
-    private int NIBPDiaHighLimit = -1;
-    private int NIBPDiaLowLimit = -1;
-    private int NIBPMeanHighLimit = -1;
-    private int NIBPMeanLowLimit = -1;
+    private int NIBPAlarmLevel = -100;
+    private int NIBPSysHighLimit = -100;
+    private int NIBPSysLowLimit = -100;
+    private int NIBPDiaHighLimit = -100;
+    private int NIBPDiaLowLimit = -100;
+    private int NIBPMeanHighLimit = -100;
+    private int NIBPMeanLowLimit = -100;
 
     /**
      * TEMP 体温报警设置
      */
     private boolean isTEMPAlarmOn = true;
-    private int TEMPAlarmLevel = -1;
-    private int T1HighLimit = -1;
-    private int T1LowLimit = -1;
-    private int T2HighLimit = -1;
-    private int T2LowLimit = -1;
+    private int TEMPAlarmLevel = -100;
+    private int T1HighLimit = -100;
+    private int T1LowLimit = -100;
+    private int T2HighLimit = -100;
+    private int T2LowLimit = -100;
 
     /**
      * RESP 呼吸报警设置
      */
     private boolean isRESPAlarmOn = true;
-    private int RESPAlarmLevel = -1;
-    private int RESPHighLimit = -1;
-    private int RESPLowLimit = -1;
+    private int RESPAlarmLevel = -100;
+    private int RESPHighLimit = -100;
+    private int RESPLowLimit = -100;
 
     /**
      * SPO2 呼吸报警设置
      */
     private boolean isSPO2AlarmOn = true;
-    private int SPO2AlarmLevel = -1;
-    private int SPO2HighLimit = -1;
-    private int SPO2LowLimit = -1;
+    private int SPO2AlarmLevel = -100;
+    private int SPO2HighLimit = -100;
+    private int SPO2LowLimit = -100;
 
     public String getDeviceSn() {
         return deviceSn;
@@ -357,5 +357,46 @@ public class DeviceContext {
 
     public void setHasReceivePatient(boolean hasReceivePatient) {
         this.hasReceivePatient = hasReceivePatient;
+    }
+
+    @Override
+    public String toString() {
+        return "DeviceContext{" +
+                "deviceSn='" + deviceSn + '\'' +
+                ", netBedNum=" + netBedNum +
+                ", hasReceivePatient=" + hasReceivePatient +
+                ", bedNum='" + bedNum + '\'' +
+                ", patientName='" + patientName + '\'' +
+                ", isHRAlarmOn=" + isHRAlarmOn +
+                ", HRAlarmLevel=" + HRAlarmLevel +
+                ", HRHighLimit=" + HRHighLimit +
+                ", HRLowLimit=" + HRLowLimit +
+                ", isPRAlarmOn=" + isPRAlarmOn +
+                ", PRAlarmLevel=" + PRAlarmLevel +
+                ", PRHighLimit=" + PRHighLimit +
+                ", PRLowLimit=" + PRLowLimit +
+                ", isNIBPAlarmOn=" + isNIBPAlarmOn +
+                ", NIBPAlarmLevel=" + NIBPAlarmLevel +
+                ", NIBPSysHighLimit=" + NIBPSysHighLimit +
+                ", NIBPSysLowLimit=" + NIBPSysLowLimit +
+                ", NIBPDiaHighLimit=" + NIBPDiaHighLimit +
+                ", NIBPDiaLowLimit=" + NIBPDiaLowLimit +
+                ", NIBPMeanHighLimit=" + NIBPMeanHighLimit +
+                ", NIBPMeanLowLimit=" + NIBPMeanLowLimit +
+                ", isTEMPAlarmOn=" + isTEMPAlarmOn +
+                ", TEMPAlarmLevel=" + TEMPAlarmLevel +
+                ", T1HighLimit=" + T1HighLimit +
+                ", T1LowLimit=" + T1LowLimit +
+                ", T2HighLimit=" + T2HighLimit +
+                ", T2LowLimit=" + T2LowLimit +
+                ", isRESPAlarmOn=" + isRESPAlarmOn +
+                ", RESPAlarmLevel=" + RESPAlarmLevel +
+                ", RESPHighLimit=" + RESPHighLimit +
+                ", RESPLowLimit=" + RESPLowLimit +
+                ", isSPO2AlarmOn=" + isSPO2AlarmOn +
+                ", SPO2AlarmLevel=" + SPO2AlarmLevel +
+                ", SPO2HighLimit=" + SPO2HighLimit +
+                ", SPO2LowLimit=" + SPO2LowLimit +
+                '}';
     }
 }
