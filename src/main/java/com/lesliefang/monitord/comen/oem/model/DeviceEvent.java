@@ -8,6 +8,8 @@ public class DeviceEvent {
 
     private String deviceSn;
 
+    private String patientName; // 病人姓名
+
     private Object data;
 
     public DeviceEvent() {
@@ -48,6 +50,14 @@ public class DeviceEvent {
         this.deviceSn = deviceSn;
     }
 
+    public String getPatientName() {
+        return patientName;
+    }
+
+    public void setPatientName(String patientName) {
+        this.patientName = patientName;
+    }
+
     public Object getData() {
         return data;
     }
@@ -62,6 +72,7 @@ public class DeviceEvent {
                 "eventType=" + eventType +
                 ", netBedNum=" + netBedNum +
                 ", deviceSn='" + deviceSn + '\'' +
+                ", patientName='" + patientName + '\'' +
                 ", data=" + data +
                 '}';
     }

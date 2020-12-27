@@ -1,6 +1,5 @@
 package com.lesliefang.monitord.websocket;
 
-import com.lesliefang.monitord.comen.oem.CmsServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
@@ -15,8 +14,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
 
 public class WebSocketServer {
     private final static Logger logger = LoggerFactory.getLogger(WebSocketServer.class);
@@ -73,13 +70,6 @@ public class WebSocketServer {
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             channelGroup.add(ctx.channel());
-            ctx.channel().eventLoop().schedule(new Runnable() {
-                @Override
-                public void run() {
-                    // 上位机上线时发送所有监护仪信息
-                    CmsServerHandler.publishAllMonitorInfo();
-                }
-            }, 5, TimeUnit.SECONDS);
         }
 
         @Override

@@ -1,12 +1,12 @@
 package com.lesliefang.monitord.comen.oem;
 
 import com.alibaba.fastjson.JSON;
+import com.lesliefang.monitord.MqttClient;
 import com.lesliefang.monitord.comen.oem.message.*;
 import com.lesliefang.monitord.comen.oem.model.DeviceContext;
 import com.lesliefang.monitord.comen.oem.model.DeviceEvent;
 import com.lesliefang.monitord.comen.oem.model.EventType;
 import com.lesliefang.monitord.comen.oem.model.VitalSign;
-import com.lesliefang.monitord.websocket.WebSocketServer;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -17,8 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     private static final Logger logger = LoggerFactory.getLogger(CmsServer.class);
@@ -29,6 +30,10 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     private AttributeKey<Integer> netBedNumKey = AttributeKey.valueOf("netBedNum");
 
     private VitalSign vitalSign = new VitalSign();
+
+    private MqttClient mqttClient = new MqttClient();
+
+    private static ExecutorService executorService = Executors.newFixedThreadPool(5);
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -65,7 +70,6 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
                 handlePatientInfoPacket((PatientInfoPacket) packet, deviceContext);
                 // 只要收到 PATIENT_INFO 包就认为已经接收了病人
                 deviceContext.setHasReceivePatient(true);
-                publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_RECIEVE_PATIENT:
                 // 监护仪接收病人
@@ -74,31 +78,24 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
             case PacketType.PT_RELEASE_PATIENT:
                 // 监护仪解除病人
                 deviceContext.setHasReceivePatient(false);
-                publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_HR_LIMIT_DATA:
                 handleHRLimitPacket((HRLimitPacket) packet, deviceContext);
-                publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_PR_LIMIT_DATA:
                 handlePRLimitPacket((PRLimitPacket) packet, deviceContext);
-                publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_RESP_LIMIT_DATA:
                 handleRESPLimitPacket((RESPLimitPacket) packet, deviceContext);
-                publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_SPO2_LIMIT_DATA:
                 handleSPO2LimitPacket((SPO2LimitPacket) packet, deviceContext);
-                publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_NIBP_LIMIT_DATA:
                 handleNIBPLimitPacket((NIBPLimitPacket) packet, deviceContext);
-                publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_TEMP_LIMIT_DATA:
                 handleTEMPLimitPacket((TEMPLimitPacket) packet, deviceContext);
-                publishDeviceContext(deviceContext);
                 break;
             case PacketType.PT_ECG1L_DATA:
                 handleECG1Packet((ECG1LPacket) packet);
@@ -120,7 +117,25 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
                 /*
                  * 接收到体温数据后发送生命体征数据给上位机，体温数据包是最后一个（依赖包的顺序）
                  */
-                publish(new DeviceEvent(EventType.EVENT_MONITOR_DATA, packet.getBedNum(), vitalSign));
+                vitalSign.setHRAlarmLevel(deviceContext.getHRAlarmLevel());
+                vitalSign.setHRHigh(deviceContext.getHRHighLimit());
+                vitalSign.setHRLow(deviceContext.getHRLowLimit());
+                vitalSign.setSPO2AlarmLevel(deviceContext.getSPO2AlarmLevel());
+                vitalSign.setSPO2High(deviceContext.getSPO2HighLimit());
+                vitalSign.setSPO2Low(deviceContext.getSPO2LowLimit());
+                vitalSign.setRRAlarmLevel(deviceContext.getRESPAlarmLevel());
+                vitalSign.setRRHigh(deviceContext.getRESPHighLimit());
+                vitalSign.setRRLow(deviceContext.getRESPLowLimit());
+                vitalSign.setPRAlarmLevel(deviceContext.getPRAlarmLevel());
+                vitalSign.setPRHigh(deviceContext.getPRHighLimit());
+                vitalSign.setPRLow(deviceContext.getPRLowLimit());
+                vitalSign.setNIBPAlarmLevel(deviceContext.getNIBPAlarmLevel());
+                vitalSign.setNIBP_SYS_High(deviceContext.getNIBPSysHighLimit());
+                vitalSign.setNIBP_SYS_Low(deviceContext.getNIBPSysLowLimit());
+
+                DeviceEvent deviceEvent = new DeviceEvent(EventType.EVENT_MONITOR_DATA, packet.getBedNum(), vitalSign);
+                deviceEvent.setPatientName(deviceContext.getPatientName());
+                publish(deviceEvent);
                 break;
         }
     }
@@ -261,18 +276,6 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     }
 
     /**
-     * 上位机（大屏）首次连接中央站时发送所有的监护仪信息
-     */
-    public static void publishAllMonitorInfo() {
-        Collection<DeviceContext> deviceContextList = deviceContexts.values();
-        for (DeviceContext deviceContext : deviceContextList) {
-            DeviceEvent deviceEvent = new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext.getNetBedNum(), deviceContext);
-            logger.info("publishAllMonitorInfo {}", deviceEvent);
-            WebSocketServer.publishToAll(JSON.toJSONString(deviceEvent));
-        }
-    }
-
-    /**
      * 转发外部上位机请求到设备
      *
      * @param deviceSn 设备sn
@@ -286,11 +289,12 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
         channel.writeAndFlush(packet);
     }
 
-    private void publishDeviceContext(DeviceContext deviceContext) {
-        publish(new DeviceEvent(EventType.EVENT_DEVICE_CONTEXT, deviceContext.getNetBedNum(), deviceContext));
-    }
-
     private void publish(DeviceEvent deviceEvent) {
-        WebSocketServer.publishToAll(JSON.toJSONString(deviceEvent));
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                mqttClient.publish("monitor/" + deviceEvent.getNetBedNum(), JSON.toJSONString(deviceEvent));
+            }
+        });
     }
 }
