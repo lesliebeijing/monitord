@@ -16,18 +16,19 @@ public class MqttClient {
 
     public MqttClient() {
         mqtt = new MQTT();
-        mqtt.setUserName("username");
-        mqtt.setPassword("password");
+        mqtt.setUserName("test");
+        mqtt.setPassword("test");
         try {
             mqtt.setHost("life.itidtech.com", 1883);
+            mqtt.setClientId("this is clientId");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
+        connect(); // 连接
     }
 
     public void publish(String topic, String message) {
         logger.debug("publish topic:{} message:{}", topic, message);
-        connection = createConnection();
         try {
             connection.publish(topic, message.getBytes(), QoS.AT_LEAST_ONCE, false);
         } catch (Exception e) {
@@ -35,16 +36,17 @@ public class MqttClient {
         }
     }
 
-    private BlockingConnection createConnection() {
+    private void connect() {
+        logger.info("mqtt begin connect");
         if (connection == null) {
-            BlockingConnection connection = mqtt.blockingConnection();
+            connection = mqtt.blockingConnection();
             try {
                 connection.connect();
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            logger.info("mqtt connected");
         }
-        return connection;
     }
 
     public void disconnect() {
@@ -56,5 +58,11 @@ public class MqttClient {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static void main(String[] args) {
+        MqttClient mqttClient = new MqttClient();
+        mqttClient.connect();
+        System.out.println(mqttClient.connection);
     }
 }
