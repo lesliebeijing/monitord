@@ -7,6 +7,7 @@ import com.lesliefang.monitord.comen.oem.model.DeviceContext;
 import com.lesliefang.monitord.comen.oem.model.DeviceEvent;
 import com.lesliefang.monitord.comen.oem.model.EventType;
 import com.lesliefang.monitord.comen.oem.model.VitalSign;
+import com.lesliefang.monitord.websocket.WebSocketServer;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -290,10 +291,20 @@ public class CmsServerHandler extends SimpleChannelInboundHandler<Packet> {
     }
 
     private void publish(DeviceEvent deviceEvent) {
+        String message = JSON.toJSONString(deviceEvent);
+        // 推送到 mqtt
         executorService.submit(new Runnable() {
             @Override
             public void run() {
-                mqttClient.publish("monitor/" + deviceEvent.getNetBedNum(), JSON.toJSONString(deviceEvent));
+                mqttClient.publish("monitor/" + deviceEvent.getNetBedNum(), message);
+            }
+        });
+
+        // 推送到 websocket
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                WebSocketServer.publishToAll(message);
             }
         });
     }
