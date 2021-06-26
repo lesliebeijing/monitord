@@ -72,10 +72,12 @@ public class MessageHandler extends ChannelInboundHandlerAdapter {
                 monitorEvent.hr = ecg.hr;
                 monitorEvent.hr_low = ecg.hr_low;
                 monitorEvent.hr_high = ecg.hr_high;
+                monitorEvent.hr_level = ecg.hr_level;
 
                 monitorEvent.rr = ecg.rr;
                 monitorEvent.rr_low = ecg.rr_low;
                 monitorEvent.rr_high = ecg.rr_high;
+                monitorEvent.rr_level = ecg.rr_level;
 
                 byte[] wave1 = new byte[256];
                 System.arraycopy(ecg.wavedata, 0, wave1, 0, 256);
@@ -96,11 +98,13 @@ public class MessageHandler extends ChannelInboundHandlerAdapter {
                 monitorEvent.spo2 = spo2.spo2;
                 monitorEvent.spo2_high = spo2.spo2_high;
                 monitorEvent.spo2_low = spo2.spo2_low;
+                monitorEvent.spo2_level = spo2.spo2_level;
                 monitorEvent.spo2_wave = spo2.wavedata;
 
                 monitorEvent.pr = spo2.pr;
                 monitorEvent.pr_high = spo2.pr_high;
                 monitorEvent.pr_low = spo2.pr_low;
+                monitorEvent.pr_level = spo2.pr_level;
             } else if (packetType == PacketType.NIBP) {
                 // NIBP
                 NIBP nibp = parseNIBP(data);
@@ -108,10 +112,12 @@ public class MessageHandler extends ChannelInboundHandlerAdapter {
                 monitorEvent.nibp_sys = nibp.sys;
                 monitorEvent.nibp_sys_high = nibp.sys_high;
                 monitorEvent.nibp_sys_low = nibp.sys_low;
+                monitorEvent.nibp_sys_level = nibp.sys_level;
 
                 monitorEvent.nibp_dia = nibp.dia;
                 monitorEvent.nibp_dia_high = nibp.dia_high;
                 monitorEvent.nibp_dia_low = nibp.dia_low;
+                monitorEvent.nibp_dia_level = nibp.dia_level;
 
                 monitorEvent.nibp_mean = nibp.mea;
             } else if (packetType == PacketType.TEMP) {
