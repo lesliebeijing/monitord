@@ -1,5 +1,7 @@
 package com.lesliefang.monitord.mdk;
 
+import com.alibaba.fastjson.JSON;
+import com.lesliefang.monitord.MqttClient;
 import com.lesliefang.monitord.mdk.entity.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -11,11 +13,16 @@ import io.netty.util.concurrent.ScheduledFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class MessageHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
     private ScheduledFuture<?> scheduledFuture;
+    private MonitorEvent monitorEvent;
+    private static ExecutorService executorService = Executors.newCachedThreadPool();
+    private static MqttClient mqttClient = new MqttClient();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -43,10 +50,15 @@ public class MessageHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf data = ((ByteBuf) msg);
 //        System.out.println(ByteBufUtil.prettyHexDump(data));
+        if (monitorEvent == null) {
+            monitorEvent = new MonitorEvent();
+        }
         try {
             int bedNum = data.getByte(2) & 0xff;
             int packetType = data.getByte(3);
             data.skipBytes(4); // 去掉前4个字节到达数据部分
+
+            monitorEvent.bed = bedNum;
 
             if (packetType == PacketType.PATIENT) {
                 // 病人信息
@@ -55,16 +67,59 @@ public class MessageHandler extends ChannelInboundHandlerAdapter {
                 // MODULE INFO
             } else if (packetType == PacketType.ECG) {
                 // ECG
-                parseECG(data);
+                ECG ecg = parseECG(data);
+
+                monitorEvent.hr = ecg.hr;
+                monitorEvent.hr_low = ecg.hr_low;
+                monitorEvent.hr_high = ecg.hr_high;
+
+                monitorEvent.rr = ecg.rr;
+                monitorEvent.rr_low = ecg.rr_low;
+                monitorEvent.rr_high = ecg.rr_high;
+
+                byte[] wave1 = new byte[256];
+                System.arraycopy(ecg.wavedata, 0, wave1, 0, 256);
+                byte[] wave2 = new byte[256];
+                System.arraycopy(ecg.wavedata, 256, wave2, 0, 256);
+                byte[] respWave = new byte[128];
+                System.arraycopy(ecg.wavedata, 256 + 256, respWave, 0, 128);
+
+                monitorEvent.ecg_wave1 = wave1;
+                monitorEvent.ecg_wave2 = wave2;
+                monitorEvent.ecg_wave3 = ecg.ecg3data;
+                monitorEvent.resp_wave = respWave;
+
             } else if (packetType == PacketType.SPO2) {
                 // SPO2
-                parseSPO2(data);
+                SPO2 spo2 = parseSPO2(data);
+
+                monitorEvent.spo2 = spo2.spo2;
+                monitorEvent.spo2_high = spo2.spo2_high;
+                monitorEvent.spo2_low = spo2.spo2_low;
+                monitorEvent.spo2_wave = spo2.wavedata;
+
+                monitorEvent.pr = spo2.pr;
+                monitorEvent.pr_high = spo2.pr_high;
+                monitorEvent.pr_low = spo2.pr_low;
             } else if (packetType == PacketType.NIBP) {
                 // NIBP
-                parseNIBP(data);
+                NIBP nibp = parseNIBP(data);
+
+                monitorEvent.nibp_sys = nibp.sys;
+                monitorEvent.nibp_sys_high = nibp.sys_high;
+                monitorEvent.nibp_sys_low = nibp.sys_low;
+
+                monitorEvent.nibp_dia = nibp.dia;
+                monitorEvent.nibp_dia_high = nibp.dia_high;
+                monitorEvent.nibp_dia_low = nibp.dia_low;
+
+                monitorEvent.nibp_mean = nibp.mea;
             } else if (packetType == PacketType.TEMP) {
                 // 体温
-                parseTemp(data);
+                Temperature temp = parseTemp(data);
+
+                monitorEvent.t1 = temp.t1;
+                monitorEvent.t2 = temp.t2;
             } else if (packetType == PacketType.FETUS) {
                 // 胎监
                 parseFETUS(data);
@@ -74,6 +129,8 @@ public class MessageHandler extends ChannelInboundHandlerAdapter {
         } finally {
             data.release();
         }
+
+        publish(monitorEvent);
     }
 
     private Patient parePatient(ByteBuf data) {
@@ -143,11 +200,6 @@ public class MessageHandler extends ChannelInboundHandlerAdapter {
         ecg.ext = data.readByte();
 
         logger.debug("ECG : {}", ecg);
-
-        byte[] waveI = new byte[256];
-        System.arraycopy(ecg.wavedata, 0, waveI, 0, 256);
-        byte[] waveII = new byte[256];
-        System.arraycopy(ecg.wavedata, 256, waveII, 0, 256);
 
         return ecg;
     }
@@ -253,5 +305,24 @@ public class MessageHandler extends ChannelInboundHandlerAdapter {
         } else {
             super.userEventTriggered(ctx, evt);
         }
+    }
+
+    private void publish(MonitorEvent monitorEvent) {
+        String message = JSON.toJSONString(monitorEvent);
+        // 推送到 mqtt
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                mqttClient.publish("monitor/" + monitorEvent.bed, message);
+            }
+        });
+
+//        // 推送到 websocket
+//        executorService.submit(new Runnable() {
+//            @Override
+//            public void run() {
+//                WebSocketServer.publishToAll(message);
+//            }
+//        });
     }
 }
